@@ -8,14 +8,55 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var appFlowViewModel = AppFlowViewModel()
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationStack {
+            Group {
+                switch appFlowViewModel.step {
+                case .landing:
+                    LandingView {
+                        appFlowViewModel.handleLandingGetStarted()
+                    }
+
+                case .home:
+                    HomeView(
+                        selectedLevel: appFlowViewModel.selectedLevel,
+                        selectedCategory: appFlowViewModel.selectedCategory,
+                        handleSelectLevel: { level in
+                            appFlowViewModel.handleSelect(level: level)
+                        },
+                        handleSelectCategory: { category in
+                            appFlowViewModel.handleSelect(category: category)
+                        },
+                        handleStartQuiz: {
+                            appFlowViewModel.handleStartQuiz()
+                        }
+                    )
+
+                case .quiz:
+                    if let quizVM = appFlowViewModel.quizViewModel {
+                        QuizQuestionView(
+                            viewModel: quizVM,
+                            handleCompleted: {
+                                appFlowViewModel.handleFinishQuiz()
+                            }
+                        )
+                    }
+
+                case .result:
+                    if let summary = appFlowViewModel.resultSummary {
+                        QuizResultView(
+                            summary: summary,
+                            handleBackHome: {
+                                appFlowViewModel.handleBackToHome()
+                            }
+                        )
+                    }
+                }
+            }
+            .navigationBarHidden(true)
         }
-        .padding()
     }
 }
 
