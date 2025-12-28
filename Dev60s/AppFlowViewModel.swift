@@ -3,7 +3,7 @@
 //  Dev60s
 //
 //  High-level MVVM state for normal app flow:
-//  Landing -> Home (level + category) -> Quiz -> Result
+//  Landing -> Category Selection -> Quiz Setup (Level + Count) -> Quiz -> Result
 //
 
 import Foundation
@@ -31,7 +31,8 @@ enum QuizCategory: String, CaseIterable, Identifiable {
 
 enum AppStep {
     case landing
-    case home
+    case categorySelection
+    case quizSetup
     case quiz
     case result
 }
@@ -40,15 +41,25 @@ final class AppFlowViewModel: ObservableObject {
     @Published var step: AppStep = .landing
     @Published var selectedLevel: QuizLevel?
     @Published var selectedCategory: QuizCategory?
+    @Published var selectedQuestionCount: Int = 10
     @Published var resultSummary: QuizResultSummary?
     @Published var quizViewModel: QuizQuestionViewModel?
+
+    var canProceedToSetup: Bool {
+        selectedCategory != nil
+    }
 
     var canStartQuiz: Bool {
         selectedLevel != nil && selectedCategory != nil
     }
 
     func handleLandingGetStarted() {
-        step = .home
+        step = .categorySelection
+    }
+
+    func handleCategorySelected() {
+        guard canProceedToSetup else { return }
+        step = .quizSetup
     }
 
     func handleSelect(level: QuizLevel) {
@@ -57,6 +68,10 @@ final class AppFlowViewModel: ObservableObject {
 
     func handleSelect(category: QuizCategory) {
         selectedCategory = category
+    }
+
+    func handleSelectQuestionCount(_ count: Int) {
+        selectedQuestionCount = count
     }
 
     func handleStartQuiz() {
@@ -71,17 +86,20 @@ final class AppFlowViewModel: ObservableObject {
         step = .result
     }
 
-    func handleBackToHome() {
-        step = .home
+    func handleBackToCategorySelection() {
+        step = .categorySelection
+    }
+
+    func handleBackToQuizSetup() {
+        step = .quizSetup
     }
 
     func handleRestart() {
         selectedLevel = nil
         selectedCategory = nil
+        selectedQuestionCount = 10
         resultSummary = nil
         quizViewModel = nil
         step = .landing
     }
 }
-
-

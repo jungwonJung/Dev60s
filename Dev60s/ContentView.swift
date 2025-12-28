@@ -16,21 +16,41 @@ struct ContentView: View {
                 switch appFlowViewModel.step {
                 case .landing:
                     LandingView {
-                        appFlowViewModel.handleLandingGetStarted()
+                        withAnimation(.easeInOut(duration: 0.4)) {
+                            appFlowViewModel.handleLandingGetStarted()
+                        }
                     }
+                    .transition(.scale.combined(with: .opacity))
 
-                case .home:
-                    HomeView(
-                        selectedLevel: appFlowViewModel.selectedLevel,
+                case .categorySelection:
+                    CategorySelectionView(
                         selectedCategory: appFlowViewModel.selectedCategory,
-                        handleSelectLevel: { level in
-                            appFlowViewModel.handleSelect(level: level)
-                        },
                         handleSelectCategory: { category in
                             appFlowViewModel.handleSelect(category: category)
                         },
+                        handleNext: {
+                            withAnimation(.easeInOut(duration: 0.4)) {
+                                appFlowViewModel.handleCategorySelected()
+                            }
+                        }
+                    )
+                    .transition(.scale.combined(with: .opacity))
+
+                case .quizSetup:
+                    QuizSetupView(
+                        selectedLevel: appFlowViewModel.selectedLevel,
+                        selectedQuestionCount: appFlowViewModel.selectedQuestionCount,
+                        handleSelectLevel: { level in
+                            appFlowViewModel.handleSelect(level: level)
+                        },
+                        handleSelectQuestionCount: { count in
+                            appFlowViewModel.handleSelectQuestionCount(count)
+                        },
                         handleStartQuiz: {
                             appFlowViewModel.handleStartQuiz()
+                        },
+                        handleBack: {
+                            appFlowViewModel.handleBackToCategorySelection()
                         }
                     )
 
@@ -49,7 +69,7 @@ struct ContentView: View {
                         QuizResultView(
                             summary: summary,
                             handleBackHome: {
-                                appFlowViewModel.handleBackToHome()
+                                appFlowViewModel.handleBackToQuizSetup()
                             }
                         )
                     }
