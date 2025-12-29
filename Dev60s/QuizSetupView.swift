@@ -13,46 +13,68 @@ import UIKit
 struct QuizSetupView: View {
     let selectedLevel: QuizLevel?
     let selectedQuestionCount: Int
+    let enableHapticFeedback: Bool
+    let enableStrictTimer: Bool
     let handleSelectLevel: (QuizLevel) -> Void
     let handleSelectQuestionCount: (Int) -> Void
+    let handleHapticFeedbackChanged: (Bool) -> Void
+    let handleStrictTimerChanged: (Bool) -> Void
     let handleStartQuiz: () -> Void
     let handleBack: () -> Void
+    @State private var gradientOffset: Double = 0
+    @State private var pulseScale: CGFloat = 1.0
     
     private var canStart: Bool {
         selectedLevel != nil
     }
     
-    private let questionCountOptions = [5, 10, 15, 20]
+    private let questionCountOptions = [20, 30, 40]
+    
+    private var estimatedMinutes: Int {
+        selectedQuestionCount
+    }
     
     var body: some View {
-        ZStack {
-            // Deep Off-black Background
-            Color(red: 0.06, green: 0.06, blue: 0.07)
-                .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 32) {
-                    // Back Button & Title
-                    headerSection
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
-                    
-                    // Level Selection
-                    levelSection
-                        .padding(.horizontal, 20)
-                    
-                    // Question Count Selection
-                    questionCountSection
-                        .padding(.horizontal, 20)
-                    
-                    Spacer()
-                        .frame(height: 20)
-                    
-                    // Start Quiz Button
-                    startButton
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 32)
-                }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 32) {
+                // Back Button & Title
+                headerSection
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                
+                // Level Selection
+                levelSection
+                    .padding(.horizontal, 20)
+                
+                // Question Count Selection
+                questionCountSection
+                    .padding(.horizontal, 20)
+                
+                // Session Preferences
+                sessionPreferencesSection
+                    .padding(.horizontal, 20)
+                
+                Spacer()
+                    .frame(height: 20)
+                
+                // Start Quiz Button
+                startButton
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 32)
+            }
+        }
+        .premiumBackground()
+        .onAppear {
+            // Start pulse animation for button
+            if canStart {
+                startPulseAnimation()
+            }
+        }
+        .onChange(of: canStart) { _, newValue in
+            if newValue {
+                startPulseAnimation()
+            } else {
+                pulseScale = 1.0
             }
         }
     }
@@ -128,7 +150,7 @@ struct QuizSetupView: View {
                             )
                     }
                     .buttonStyle(SquishyButtonStyle())
-                    .animation(.easeOut(duration: 0.2), value: isSelected)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
                 }
             }
         }
@@ -166,9 +188,85 @@ struct QuizSetupView: View {
                             )
                     }
                     .buttonStyle(SquishyButtonStyle())
-                    .animation(.easeOut(duration: 0.2), value: isSelected)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelected)
                 }
             }
+            
+            // Estimated session time
+            Text("Estimated session: \(estimatedMinutes) minutes")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundColor(.white.opacity(0.5))
+                .padding(.top, 4)
+        }
+    }
+    
+    // MARK: - Session Preferences Section
+    
+    private var sessionPreferencesSection: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Session Preferences")
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
+            
+            VStack(spacing: 16) {
+                // Haptic Engine Toggle
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Haptic Engine")
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundColor(.white)
+                        
+                        Text("Enable tactile feedback during quiz")
+                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: Binding(
+                        get: { enableHapticFeedback },
+                        set: { handleHapticFeedbackChanged($0) }
+                    ))
+                        .tint(Color.purple.opacity(0.8))
+                        .labelsHidden()
+                }
+                .padding(.vertical, 8)
+                
+                Divider()
+                    .background(Color.white.opacity(0.2))
+                
+                // Strict Timer Toggle
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Strict Timer")
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundColor(.white)
+                        
+                        Text("Enable 60s countdown per question")
+                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: Binding(
+                        get: { enableStrictTimer },
+                        set: { handleStrictTimerChanged($0) }
+                    ))
+                        .tint(Color.purple.opacity(0.8))
+                        .labelsHidden()
+                }
+                .padding(.vertical, 8)
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    )
+            )
         }
     }
     
@@ -215,19 +313,44 @@ struct QuizSetupView: View {
                             endPoint: .trailing
                         )
                     )
+                    .overlay(
+                        // Subtle glow effect
+                        Capsule()
+                            .stroke(
+                                LinearGradient(
+                                    colors: canStart ? [
+                                        Color.purple.opacity(0.6),
+                                        Color.blue.opacity(0.6),
+                                        Color.purple.opacity(0.6)
+                                    ] : [],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ),
+                                lineWidth: canStart ? 1.5 : 0
+                            )
+                            .blur(radius: canStart ? 4 : 0)
+                    )
                     .shadow(
-                        color: canStart ? .black.opacity(0.2) : .clear,
-                        radius: canStart ? 12 : 0,
+                        color: canStart ? Color.purple.opacity(0.3) : .clear,
+                        radius: canStart ? 15 : 0,
                         x: 0,
-                        y: canStart ? 4 : 0
+                        y: canStart ? 6 : 0
                     )
             )
             .opacity(canStart ? 1.0 : 0.6)
-            .scaleEffect(canStart ? 1.0 : 0.98)
+            .scaleEffect(canStart ? pulseScale : 0.98)
         }
         .buttonStyle(SquishyButtonStyle())
         .disabled(!canStart)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: canStart)
+    }
+    
+    // MARK: - Pulse Animation
+    
+    private func startPulseAnimation() {
+        withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+            pulseScale = 1.02
+        }
     }
 }
 
@@ -236,11 +359,14 @@ struct QuizSetupView: View {
 #Preview {
     QuizSetupView(
         selectedLevel: .normal,
-        selectedQuestionCount: 10,
+        selectedQuestionCount: 20,
+        enableHapticFeedback: true,
+        enableStrictTimer: true,
         handleSelectLevel: { _ in },
         handleSelectQuestionCount: { _ in },
+        handleHapticFeedbackChanged: { _ in },
+        handleStrictTimerChanged: { _ in },
         handleStartQuiz: {},
         handleBack: {}
     )
 }
-

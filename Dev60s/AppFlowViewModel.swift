@@ -41,7 +41,9 @@ final class AppFlowViewModel: ObservableObject {
     @Published var step: AppStep = .landing
     @Published var selectedLevel: QuizLevel?
     @Published var selectedCategory: QuizCategory?
-    @Published var selectedQuestionCount: Int = 10
+    @Published var selectedQuestionCount: Int = 20
+    @Published var enableHapticFeedback: Bool = true
+    @Published var enableStrictTimer: Bool = true
     @Published var resultSummary: QuizResultSummary?
     @Published var quizViewModel: QuizQuestionViewModel?
 
@@ -76,14 +78,35 @@ final class AppFlowViewModel: ObservableObject {
 
     func handleStartQuiz() {
         guard canStartQuiz else { return }
-        quizViewModel = QuizQuestionViewModel(questions: QuizMockData.questions)
+        quizViewModel = QuizQuestionViewModel(
+            questions: QuizMockData.questions,
+            enableHapticFeedback: enableHapticFeedback,
+            enableStrictTimer: enableStrictTimer
+        )
         step = .quiz
     }
 
     func handleFinishQuiz() {
-        // For now, use mock result summary; later compute from answers.
-        resultSummary = QuizMockData.resultSummary
+        // Generate result summary from actual quiz answers
+        if let quizVM = quizViewModel {
+            resultSummary = quizVM.generateResultSummary()
+        } else {
+            // Fallback to mock data if no view model exists
+            resultSummary = QuizMockData.resultSummary
+        }
         step = .result
+    }
+    
+    func handleTryAgain() {
+        // Reset quiz state but keep category and settings
+        // Create a fresh quiz view model with all states reset
+        quizViewModel = QuizQuestionViewModel(
+            questions: QuizMockData.questions,
+            enableHapticFeedback: enableHapticFeedback,
+            enableStrictTimer: enableStrictTimer
+        )
+        resultSummary = nil
+        step = .quiz
     }
 
     func handleBackToCategorySelection() {
@@ -97,7 +120,9 @@ final class AppFlowViewModel: ObservableObject {
     func handleRestart() {
         selectedLevel = nil
         selectedCategory = nil
-        selectedQuestionCount = 10
+        selectedQuestionCount = 20
+        enableHapticFeedback = true
+        enableStrictTimer = true
         resultSummary = nil
         quizViewModel = nil
         step = .landing

@@ -40,11 +40,19 @@ struct ContentView: View {
                     QuizSetupView(
                         selectedLevel: appFlowViewModel.selectedLevel,
                         selectedQuestionCount: appFlowViewModel.selectedQuestionCount,
+                        enableHapticFeedback: appFlowViewModel.enableHapticFeedback,
+                        enableStrictTimer: appFlowViewModel.enableStrictTimer,
                         handleSelectLevel: { level in
                             appFlowViewModel.handleSelect(level: level)
                         },
                         handleSelectQuestionCount: { count in
                             appFlowViewModel.handleSelectQuestionCount(count)
+                        },
+                        handleHapticFeedbackChanged: { value in
+                            appFlowViewModel.enableHapticFeedback = value
+                        },
+                        handleStrictTimerChanged: { value in
+                            appFlowViewModel.enableStrictTimer = value
                         },
                         handleStartQuiz: {
                             appFlowViewModel.handleStartQuiz()
@@ -68,10 +76,14 @@ struct ContentView: View {
                     if let summary = appFlowViewModel.resultSummary {
                         QuizResultView(
                             summary: summary,
+                            handleTryAgain: {
+                                appFlowViewModel.handleTryAgain()
+                            },
                             handleBackHome: {
-                                appFlowViewModel.handleBackToQuizSetup()
+                                appFlowViewModel.handleBackToCategorySelection()
                             }
                         )
+                        .transition(.scale.combined(with: .opacity))
                     }
                 }
             }

@@ -201,12 +201,7 @@ struct CategorySelectionView: View {
     private let cardSpacing: CGFloat = 16
     
     var body: some View {
-        ZStack {
-            // Deep Off-black Background
-            Color(red: 0.06, green: 0.06, blue: 0.07)
-                .ignoresSafeArea()
-            
-            ScrollView {
+        ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
                     // App Title with Gradient
                     titleHeader
@@ -228,8 +223,8 @@ struct CategorySelectionView: View {
                             .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
-            }
         }
+        .premiumBackground()
         .onChange(of: selectedCategory) { _, newValue in
             // Clear selectedCategoryId when category is deselected
             if newValue == nil {
