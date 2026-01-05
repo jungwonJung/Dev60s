@@ -25,17 +25,17 @@ struct QuizResultView: View {
         summary.incorrectItems.isEmpty && summary.correctCount == summary.totalCount
     }
     
-    private var performanceMessage: String {
+    private var performanceMessage: (firstLine: String, secondLine: String?) {
         if isPerfectScore {
-            return "Perfect Score! You nailed every question. 🔥"
+            return ("Perfect Score! You nailed every question. 🔥", nil)
         } else if scorePercentage >= 0.9 {
-            return "Excellent! You're ready for the interview."
+            return ("Excellent! You're ready for the interview.", nil)
         } else if scorePercentage >= 0.7 {
-            return "Great job! Keep practicing to improve."
+            return ("Great job! Keep practicing to improve.", nil)
         } else if scorePercentage >= 0.5 {
-            return "Good effort! Review the topics and try again."
+            return ("Good effort!", "Review the topics and try again.")
         } else {
-            return "Keep learning! Every mistake is a step forward."
+            return ("Keep learning! Every mistake is a step forward.", nil)
         }
     }
     
@@ -197,21 +197,28 @@ struct QuizResultView: View {
     // MARK: - Performance Message Card
     
     private var performanceMessageCard: some View {
-        Text(performanceMessage)
-            .font(.system(size: 17, weight: .medium, design: .rounded))
-            .foregroundColor(.white.opacity(0.9))
-            .multilineTextAlignment(.center)
-            .lineSpacing(4)
-            .frame(maxWidth: .infinity)
-            .padding(24)
-            .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                    )
-            )
+        VStack(spacing: 4) {
+            Text(performanceMessage.firstLine)
+                .font(.system(size: 17, weight: .medium, design: .rounded))
+                .foregroundColor(.white.opacity(0.9))
+            
+            if let secondLine = performanceMessage.secondLine {
+                Text(secondLine)
+                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.9))
+            }
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(24)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+        )
     }
     
     // MARK: - Incorrect Answers Section
@@ -231,12 +238,14 @@ struct QuizResultView: View {
     
     private func incorrectAnswerCard(_ item: QuizResultItem) -> some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Question Text
             Text(item.questionText)
                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .foregroundColor(.white.opacity(0.9))
                 .multilineTextAlignment(.leading)
                 .lineSpacing(4)
             
+            // Correct Answer
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("Correct:")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -246,6 +255,7 @@ struct QuizResultView: View {
                     .foregroundColor(Color(red: 0.18, green: 0.80, blue: 0.44)) // Emerald Green
             }
             
+            // User Answer
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("Your answer:")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -253,6 +263,25 @@ struct QuizResultView: View {
                 Text(item.userAnswer)
                     .font(.system(size: 14, weight: .regular, design: .rounded))
                     .foregroundColor(.white.opacity(0.7))
+            }
+            
+            // Explanation (if available)
+            if let explanation = item.explanation, !explanation.isEmpty {
+                Divider()
+                    .background(Color.white.opacity(0.2))
+                    .padding(.vertical, 4)
+                
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Color(red: 0.95, green: 0.61, blue: 0.07)) // Orange
+                        .padding(.top, 2)
+                    
+                    Text(explanation)
+                        .font(.system(size: 13, weight: .regular, design: .rounded))
+                        .foregroundColor(.white.opacity(0.8))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

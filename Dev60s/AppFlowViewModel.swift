@@ -78,35 +78,85 @@ final class AppFlowViewModel: ObservableObject {
 
     func handleStartQuiz() {
         guard canStartQuiz else { return }
-        quizViewModel = QuizQuestionViewModel(
-            questions: QuizMockData.questions,
-            enableHapticFeedback: enableHapticFeedback,
-            enableStrictTimer: enableStrictTimer
-        )
-        step = .quiz
+        
+        // Load questions from JSON asynchronously
+        Task {
+            do {
+                let questions = try await QuizDataService.loadQuestions(
+                    category: selectedCategory,
+                    level: selectedLevel,
+                    count: selectedQuestionCount
+                )
+                
+                await MainActor.run {
+                    quizViewModel = QuizQuestionViewModel(
+                        questions: questions,
+                        enableHapticFeedback: enableHapticFeedback,
+                        enableStrictTimer: enableStrictTimer
+                    )
+                    step = .quiz
+                }
+            } catch {
+                await MainActor.run {
+                    // Handle error - for now, fallback to empty array
+                    // In production, show error alert to user
+                    print("Error loading questions: \(error.localizedDescription)")
+                    quizViewModel = QuizQuestionViewModel(
+                        questions: [],
+                        enableHapticFeedback: enableHapticFeedback,
+                        enableStrictTimer: enableStrictTimer
+                    )
+                    step = .quiz
+                }
+            }
+        }
     }
 
     func handleFinishQuiz() {
         // Generate result summary from actual quiz answers
-        if let quizVM = quizViewModel {
-            resultSummary = quizVM.generateResultSummary()
-        } else {
-            // Fallback to mock data if no view model exists
-            resultSummary = QuizMockData.resultSummary
+        guard let quizVM = quizViewModel else {
+            // This should never happen in normal flow, but handle gracefully
+            resultSummary = QuizResultSummary(correctCount: 0, totalCount: 0, incorrectItems: [])
+            step = .result
+            return
         }
+        resultSummary = quizVM.generateResultSummary()
         step = .result
     }
     
     func handleTryAgain() {
         // Reset quiz state but keep category and settings
         // Create a fresh quiz view model with all states reset
-        quizViewModel = QuizQuestionViewModel(
-            questions: QuizMockData.questions,
-            enableHapticFeedback: enableHapticFeedback,
-            enableStrictTimer: enableStrictTimer
-        )
-        resultSummary = nil
-        step = .quiz
+        Task {
+            do {
+                let questions = try await QuizDataService.loadQuestions(
+                    category: selectedCategory,
+                    level: selectedLevel,
+                    count: selectedQuestionCount
+                )
+                
+                await MainActor.run {
+                    quizViewModel = QuizQuestionViewModel(
+                        questions: questions,
+                        enableHapticFeedback: enableHapticFeedback,
+                        enableStrictTimer: enableStrictTimer
+                    )
+                    resultSummary = nil
+                    step = .quiz
+                }
+            } catch {
+                await MainActor.run {
+                    print("Error loading questions: \(error.localizedDescription)")
+                    quizViewModel = QuizQuestionViewModel(
+                        questions: [],
+                        enableHapticFeedback: enableHapticFeedback,
+                        enableStrictTimer: enableStrictTimer
+                    )
+                    resultSummary = nil
+                    step = .quiz
+                }
+            }
+        }
     }
 
     func handleBackToCategorySelection() {

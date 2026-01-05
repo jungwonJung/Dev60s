@@ -21,7 +21,6 @@ struct QuizSetupView: View {
     let handleStrictTimerChanged: (Bool) -> Void
     let handleStartQuiz: () -> Void
     let handleBack: () -> Void
-    @State private var gradientOffset: Double = 0
     @State private var pulseScale: CGFloat = 1.0
     
     private var canStart: Bool {

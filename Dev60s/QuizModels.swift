@@ -2,7 +2,7 @@
 //  QuizModels.swift
 //  Dev60s
 //
-//  Simple quiz models using mock data only.
+//  Quiz data models with real Swift questions
 //
 
 import Foundation
@@ -13,12 +13,15 @@ struct QuizOption: Identifiable, Hashable {
 }
 
 struct QuizQuestion: Identifiable, Hashable {
-    let id: UUID = UUID()
-    let title: String            // e.g. "Aptitude Test"
-    let index: Int               // 1-based index
+    let id: String               // Question ID from database
+    let title: String            // Category name
+    let index: Int               // 1-based index (for display)
     let total: Int               // total number of questions in quiz
     let prompt: String
     let options: [QuizOption]
+    let correctAnswerIndex: Int // Index of correct answer in options array
+    let explanation: String?    // Optional explanation
+    let targetLevel: String?    // Target difficulty level (Easy, Normal, Hard)
 }
 
 struct QuizResultItem: Identifiable, Hashable {
@@ -26,6 +29,7 @@ struct QuizResultItem: Identifiable, Hashable {
     let questionText: String
     let correctAnswer: String
     let userAnswer: String
+    let explanation: String? // Explanation for the correct answer
 }
 
 struct QuizResultSummary {
@@ -34,56 +38,14 @@ struct QuizResultSummary {
     let incorrectItems: [QuizResultItem]
 }
 
-// MARK: - Mock Data
+// MARK: - Mock Data (Preview Only)
 
 enum QuizMockData {
-    static let questions: [QuizQuestion] = [
-        QuizQuestion(
-            title: "Aptitude Test",
-            index: 1,
-            total: 2,
-            prompt: "If a car travels 200 miles in 4 hours, what is its average speed?",
-            options: [
-                QuizOption(text: "40 Mph"),
-                QuizOption(text: "50 Mph"),
-                QuizOption(text: "60 Mph"),
-                QuizOption(text: "70 Mph")
-            ]
-        ),
-        QuizQuestion(
-            title: "Logical Reasoning",
-            index: 2,
-            total: 2,
-            prompt: "Mary is three times as old as John. If Mary is 30 years old, how old is John?",
-            options: [
-                QuizOption(text: "10 Years Old"),
-                QuizOption(text: "15 Years Old"),
-                QuizOption(text: "20 Years Old"),
-                QuizOption(text: "30 Years Old")
-            ]
-        )
-    ]
-
-    static let resultSummary: QuizResultSummary = {
-        let items: [QuizResultItem] = [
-            QuizResultItem(
-                questionText: "If a car travels 200 miles in 4 hours, what is its average speed?",
-                correctAnswer: "50 Mph",
-                userAnswer: "40 Mph"
-            ),
-            QuizResultItem(
-                questionText: "What approach do you use to adapt a collection of elements that don’t conform to Identifiable?",
-                correctAnswer: "Passing a key path along with the data",
-                userAnswer: "Calling map(_:) on the data"
-            )
-        ]
-
-        return QuizResultSummary(
-            correctCount: 7,
-            totalCount: 10,
-            incorrectItems: items
-        )
-    }()
+    /// Empty result summary for SwiftUI previews only
+    /// In production, use QuizQuestionViewModel.generateResultSummary()
+    static let resultSummary: QuizResultSummary = QuizResultSummary(
+        correctCount: 0,
+        totalCount: 0,
+        incorrectItems: []
+    )
 }
-
-

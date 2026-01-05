@@ -31,19 +31,32 @@ struct QuizQuestionView: View {
                             .padding(.horizontal, 20)
                             .matchedGeometryEffect(id: "question-\(question.id)", in: questionNamespace)
                         
-                        // Options Grid (2x2)
+                        // Options Grid (Vertical list for full text display)
                         optionsGrid(question)
                             .padding(.horizontal, 20)
                     }
                     
+                    // Spacer for bottom button space
                     Spacer()
-                        .frame(height: 20)
-                    
-                    // Bottom Button
-                    bottomButton
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 32)
+                        .frame(height: 100)
                 }
+            }
+            .safeAreaInset(edge: .bottom) {
+                // Fixed bottom button
+                bottomButton
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 30)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.08, green: 0.10, blue: 0.20).opacity(0.95),
+                                Color(red: 0.05, green: 0.05, blue: 0.08).opacity(0.95)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .ignoresSafeArea(edges: .bottom)
+                    )
             }
             
             // Confetti Effect
@@ -162,9 +175,8 @@ struct QuizQuestionView: View {
                 .foregroundColor(.white)
                 .multilineTextAlignment(.leading)
                 .lineSpacing(6)
-                .lineLimit(3)
-                .minimumScaleFactor(0.8)
                 .fixedSize(horizontal: false, vertical: true)
+                .minimumScaleFactor(0.5) // ✅ 더 작게 줄일 수 있도록
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(24)
@@ -182,26 +194,21 @@ struct QuizQuestionView: View {
     
     private func optionsGrid(_ question: QuizQuestion) -> some View {
         let options = question.options
-        let rows = (options.count + 1) / 2
         
+        // Use vertical list to allow full text display
         return VStack(spacing: 12) {
-            ForEach(0..<rows, id: \.self) { row in
-                HStack(spacing: 12) {
-                    if row * 2 < options.count {
-                        optionCard(options[row * 2], question: question)
-                    }
-                    if row * 2 + 1 < options.count {
-                        optionCard(options[row * 2 + 1], question: question)
-                    }
-                }
+            ForEach(options) { option in
+                optionCard(option, question: question)
             }
         }
     }
     
     private func optionCard(_ option: QuizOption, question: QuizQuestion) -> some View {
         let isSelected = option == viewModel.selectedOption
-        // For demo: second option (index 1) is correct, or first if only one option
-        let correctOption = question.options.indices.contains(1) ? question.options[1] : question.options.first
+        // Use correctAnswerIndex to determine correct option
+        let correctOption = question.options.indices.contains(question.correctAnswerIndex) 
+            ? question.options[question.correctAnswerIndex] 
+            : question.options.first
         let isCorrect = option == correctOption
         let isIncorrect = isSelected && viewModel.answerState == .incorrect
         let showAsCorrect = (isCorrect && viewModel.showCorrectAnswer)
@@ -212,7 +219,8 @@ struct QuizQuestionView: View {
             } else if isIncorrect {
                 return Color(red: 0.91, green: 0.30, blue: 0.24) // Alizarin Red
             } else if isSelected {
-                return Color.white.opacity(0.15)
+                // Use theme accent gradient for selected state
+                return Color.purple.opacity(0.25)
             } else {
                 return Color.white.opacity(0.08)
             }
@@ -220,7 +228,8 @@ struct QuizQuestionView: View {
         
         var borderColor: Color {
             if isSelected && viewModel.answerState == .selected {
-                return Color.purple.opacity(0.6)
+                // Theme accent gradient border for selected state
+                return Color.purple.opacity(0.8)
             } else if showAsCorrect || isIncorrect {
                 return Color.white.opacity(0.3)
             } else {
@@ -245,19 +254,18 @@ struct QuizQuestionView: View {
         }
         
         return Button {
-            // Only allow selection if not evaluated yet
-            if viewModel.answerState == .none {
+            // Allow selection change before evaluation (before Next is clicked)
+            if viewModel.answerState == .none || viewModel.answerState == .selected {
                 viewModel.handleSelect(option: option)
             }
         } label: {
-            HStack {
+            HStack(alignment: .top, spacing: 12) {
                 Text(option.text)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(2)
-                
-                Spacer()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
                 if showAsCorrect {
                     Image(systemName: "checkmark.circle.fill")
@@ -272,16 +280,48 @@ struct QuizQuestionView: View {
                 }
             }
             .padding(20)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 70)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(backgroundColor)
-                    .overlay(
+                ZStack {
+                    // Background with gradient for selected state
+                    if isSelected && viewModel.answerState == .selected {
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(borderColor, lineWidth: 1.5)
-                    )
-                    .shadow(color: Color.purple.opacity(0.3), radius: glowRadius, x: 0, y: 0)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.purple.opacity(0.3),
+                                        Color.blue.opacity(0.3)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(backgroundColor)
+                    }
+                    
+                    // Border
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(
+                            isSelected && viewModel.answerState == .selected
+                                ? LinearGradient(
+                                    colors: [
+                                        Color.purple.opacity(0.9),
+                                        Color.blue.opacity(0.9)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                : LinearGradient(
+                                    colors: [borderColor],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                            lineWidth: isSelected && viewModel.answerState == .selected ? 2.0 : 1.5
+                        )
+                }
+                .shadow(color: Color.purple.opacity(0.4), radius: glowRadius, x: 0, y: 0)
             )
             .scaleEffect(pulseScale)
         }
@@ -436,7 +476,7 @@ struct QuizQuestionView: View {
 
 #Preview {
     QuizQuestionView(
-        viewModel: QuizQuestionViewModel(questions: QuizMockData.questions),
+        viewModel: QuizQuestionViewModel(questions: []),
         handleCompleted: {}
     )
 }

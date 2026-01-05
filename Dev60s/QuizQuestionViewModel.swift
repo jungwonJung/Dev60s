@@ -14,6 +14,16 @@ enum AnswerState: Equatable {
     case selected
     case correct
     case incorrect
+    
+    // Explicit nonisolated Equatable conformance to avoid actor isolation warnings
+    nonisolated static func == (lhs: AnswerState, rhs: AnswerState) -> Bool {
+        switch (lhs, rhs) {
+        case (.none, .none), (.selected, .selected), (.correct, .correct), (.incorrect, .incorrect):
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 struct QuizAnswer {
@@ -69,7 +79,7 @@ final class QuizQuestionViewModel: ObservableObject {
         currentIndex >= questions.count - 1
     }
     
-    init(questions: [QuizQuestion] = QuizMockData.questions, enableHapticFeedback: Bool = true, enableStrictTimer: Bool = true) {
+    init(questions: [QuizQuestion] = [], enableHapticFeedback: Bool = true, enableStrictTimer: Bool = true) {
         self.questions = questions
         self.enableHapticFeedback = enableHapticFeedback
         self.enableStrictTimer = enableStrictTimer
@@ -91,8 +101,10 @@ final class QuizQuestionViewModel: ObservableObject {
         // Stop timer
         timer?.invalidate()
         
-        // Determine correct answer (for demo: second option is correct)
-        let correctOption = question.options.indices.contains(1) ? question.options[1] : question.options.first!
+        // Determine correct answer using correctAnswerIndex
+        let correctOption = question.options.indices.contains(question.correctAnswerIndex) 
+            ? question.options[question.correctAnswerIndex] 
+            : question.options.first!
         let isCorrect = option == correctOption
         
         // Store answer
@@ -191,7 +203,8 @@ final class QuizQuestionViewModel: ObservableObject {
                 QuizResultItem(
                     questionText: answer.question.prompt,
                     correctAnswer: answer.correctOption.text,
-                    userAnswer: answer.selectedOption.text
+                    userAnswer: answer.selectedOption.text,
+                    explanation: answer.question.explanation
                 )
             }
         
@@ -216,12 +229,16 @@ final class QuizQuestionViewModel: ObservableObject {
             } else {
                 // Timer finished - treat as incorrect
                 self.timer?.invalidate()
-                if self.answerState == .none, let question = self.currentQuestion {
+                if self.answerState == .none || self.answerState == .selected, let question = self.currentQuestion {
                     // Store incorrect answer due to timeout
-                    let correctOption = question.options.indices.contains(1) ? question.options[1] : question.options.first!
+                    let correctOption = question.options.indices.contains(question.correctAnswerIndex) 
+                        ? question.options[question.correctAnswerIndex] 
+                        : question.options.first!
+                    let selectedOption = self.selectedOption ?? QuizOption(text: "Time's Up")
+                    
                     self.answers.append(QuizAnswer(
                         question: question,
-                        selectedOption: QuizOption(text: "Time's Up"),
+                        selectedOption: selectedOption,
                         isCorrect: false,
                         correctOption: correctOption
                     ))
@@ -233,6 +250,13 @@ final class QuizQuestionViewModel: ObservableObject {
                     if self.enableHapticFeedback {
                         let generator = UINotificationFeedbackGenerator()
                         generator.notificationOccurred(UINotificationFeedbackGenerator.FeedbackType.error)
+                    }
+                    
+                    // Auto-advance to next question after showing correct answer (2 seconds delay)
+                    if !self.isLastQuestion {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            self.handleNext()
+                        }
                     }
                 }
             }
