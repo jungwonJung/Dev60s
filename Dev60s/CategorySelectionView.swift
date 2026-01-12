@@ -191,7 +191,8 @@ struct CategorySelectionView: View {
     private let cardSpacing: CGFloat = 16
     
     var body: some View {
-        ScrollView {
+        ZStack {
+            ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
                     // App Title with Gradient
                     titleHeader
@@ -202,17 +203,31 @@ struct CategorySelectionView: View {
                     categoryGrid
                         .padding(.horizontal, 20)
                     
+                    // Spacer for bottom button space
                     Spacer()
-                        .frame(height: 20)
-                    
-                    // Next Button (hidden initially, fade in on selection)
-                    if hasSelectedCategory {
-                        nextButton
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 32)
-                            .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    }
+                        .frame(height: 100)
                 }
+            }
+            .safeAreaInset(edge: .bottom) {
+                // Fixed bottom button
+                if hasSelectedCategory {
+                    nextButton
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 30)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .background(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.08, green: 0.10, blue: 0.20).opacity(0.95),
+                                    Color(red: 0.05, green: 0.05, blue: 0.08).opacity(0.95)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .ignoresSafeArea(edges: .bottom)
+                        )
+                }
+            }
         }
         .premiumBackground()
         .onChange(of: selectedCategory) { _, newValue in

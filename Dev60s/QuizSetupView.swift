@@ -34,32 +34,47 @@ struct QuizSetupView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 32) {
-                // Back Button & Title
-                headerSection
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                
-                // Level Selection
-                levelSection
-                    .padding(.horizontal, 20)
-                
-                // Question Count Selection
-                questionCountSection
-                    .padding(.horizontal, 20)
-                
-                // Session Preferences
-                sessionPreferencesSection
-                    .padding(.horizontal, 20)
-                
-                Spacer()
-                    .frame(height: 20)
-                
-                // Start Quiz Button
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 32) {
+                    // Back Button & Title
+                    headerSection
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                    
+                    // Level Selection
+                    levelSection
+                        .padding(.horizontal, 20)
+                    
+                    // Question Count Selection
+                    questionCountSection
+                        .padding(.horizontal, 20)
+                    
+                    // Session Preferences
+                    sessionPreferencesSection
+                        .padding(.horizontal, 20)
+                    
+                    // Spacer for bottom button space
+                    Spacer()
+                        .frame(height: 100)
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                // Fixed bottom button
                 startButton
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 30)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.08, green: 0.10, blue: 0.20).opacity(0.95),
+                                Color(red: 0.05, green: 0.05, blue: 0.08).opacity(0.95)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .ignoresSafeArea(edges: .bottom)
+                    )
             }
         }
         .premiumBackground()
