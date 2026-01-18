@@ -83,9 +83,3 @@ Select a target device/simulator in Xcode and press `Cmd + R`.
 
 - Use `.premiumBackground()` for screen consistency
 - Keep view logic thin; put state and logic in ViewModels
-- Follow Swift naming and MVVM patterns documented in `DOCUMENTATION.md`
-
-## Contributing
-
-Contributions are welcome. Please follow the architecture and design guidelines in `DOCUMENTATION.md` and keep changes focused and well-documented.
-
